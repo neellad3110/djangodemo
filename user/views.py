@@ -8,7 +8,10 @@ from django.contrib import messages
 
 
 def index(request):
-    return render(request,"user/index.html")
+    if request.user.is_authenticated :
+        return redirect('home')
+    else:
+        return render(request,"user/index.html")
 
 @login_required(login_url='/login')
 def home(request):
@@ -20,22 +23,33 @@ def home(request):
 def userlogout(request):
 	logout(request)
 	messages.info(request, "You have successfully logged out.") 
-	return redirect('/')
+	return redirect('index-page')
 
 
 def userregister(request):
 
-    # if 'username' in request.session:
-    #     return redirect('home')
-    # else:       
+    if request.user.is_authenticated :
+        return redirect('home')
+    else:       
         form = user_registration_form(request.POST) 
             # form object
         if request.method == 'POST':
             if form.is_valid():
                 
                 user_data=form.save()
-                request.session['username'] = user_data.username 
-                return redirect('home') 
+
+                 #Authenticate the user
+                username = form.cleaned_data['username']
+                password = form.cleaned_data['password1']
+                user = authenticate(request, username=username, password=password)
+
+                if user is not None:
+                    login(request, user)
+                    request.session['username'] = user_data.username 
+                    return redirect('home') 
+
+                
+                
 
         else:
             form = user_registration_form()
@@ -45,9 +59,9 @@ def userregister(request):
 
 def userlogin(request):
 
-    # if 'username' in request.session:
-    #     return redirect('home')
-    # else:       
+    if request.user.is_authenticated :
+        return redirect('home')
+    else:       
         form = user_authentication_form(request.POST) 
 
           
